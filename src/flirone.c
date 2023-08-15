@@ -40,19 +40,23 @@
 /* defines */
 
 // color visible image
+#define VIDEO_DEVICE1 "/dev/video2" // color visible image
 #define FRAME_WIDTH1    640
 #define FRAME_HEIGHT1   480
 
 // colorized thermal image
+#define VIDEO_DEVICE2 "/dev/video3" // colorized thermal image
 #define FRAME_WIDTH2    frame_width2
 #define FRAME_HEIGHT2   frame_height2
 // original width/height
+#define VIDEO_DEVICE0 "/dev/video1"  // gray scale thermal image
 #define FRAME_OWIDTH2   frame_owidth2
 #define FRAME_OHEIGHT2  frame_oheight2
 
 // max chars in line
 #define MAX_CHARS2      (FRAME_WIDTH2 / 6 + (flirone_pro ? 0 : 1))
 
+#define FRAME_FORMAT0 V4L2_PIX_FMT_GREY
 #define FRAME_FORMAT1   V4L2_PIX_FMT_MJPEG
 #define FRAME_FORMAT2   V4L2_PIX_FMT_RGB24
 
@@ -75,8 +79,8 @@
 
 /* global data */
 
-static char video_device1[64];
-static char video_device2[64];
+//static char video_device1[64];
+//static char video_device2[64];
 static int frame_width2 = 80;
 static int frame_height2 = 80;
 static int frame_owidth2 = 80;
@@ -88,6 +92,11 @@ static char pal_colors = 0;
 
 static int FFC = 0;    // detect FFC
 
+const char *video_device0=VIDEO_DEVICE0;
+const char *video_device1=VIDEO_DEVICE1;
+const char *video_device2=VIDEO_DEVICE2;
+
+static int fdwr0 = 0;
 static int fdwr1 = 0;
 static int fdwr2 = 0;
 static struct libusb_device_handle *devh = NULL;
@@ -141,11 +150,46 @@ static double raw2temperature(unsigned short RAW)
 static void startv4l2()
 {
     int ret_code = 0;
-    struct v4l2_capability vid_caps1 = {}, vid_caps2 = {};
-    struct v4l2_format vid_format1 = {}, vid_format2 = {};
+    struct v4l2_capability vid_caps0 = {}, vid_caps1 = {}, vid_caps2 = {};
+    struct v4l2_format vid_format0 = {}, vid_format1 = {}, vid_format2 = {};
+    size_t linewidth0 = 0, framesize0 = 0;
     size_t linewidth1 = 0, framesize1 = 0;
     size_t linewidth2 = 0, framesize2 = 0;
+/*
+    //open video_device0
+    printf("using output device: %s\n", video_device0);
 
+    fdwr0 = open(video_device0, O_RDWR);
+    assert(fdwr0 >= 0);
+
+    ret_code = ioctl(fdwr0, VIDIOC_QUERYCAP, &vid_caps0);
+    assert(ret_code != -1);
+
+    memset(&vid_format0, 0, sizeof(vid_format0));
+
+    ret_code = ioctl(fdwr0, VIDIOC_G_FMT, &vid_format0);
+
+    linewidth0 = FRAME_OWIDTH2;
+    framesize0 = FRAME_OWIDTH2 * FRAME_OHEIGHT2 * 1;
+
+    vid_format0.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
+    vid_format0.fmt.pix.width = FRAME_OWIDTH2;
+    vid_format0.fmt.pix.height = FRAME_OHEIGHT2;
+    vid_format0.fmt.pix.pixelformat = FRAME_FORMAT0;
+    vid_format0.fmt.pix.sizeimage = framesize0;
+    vid_format0.fmt.pix.field = V4L2_FIELD_NONE;
+    vid_format0.fmt.pix.bytesperline = linewidth0;
+    vid_format0.fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
+
+    // set data format
+    ret_code = ioctl(fdwr0, VIDIOC_S_FMT, &vid_format0);
+    if (ret_code == -1) {
+        printf("ioctl failed and returned errno %i: %s \n", errno, strerror(errno));
+    }
+    assert(ret_code != -1);
+
+    print_format(&vid_format0);
+*/
     //open video_device1
     printf("using output device: %s\n", video_device1);
 
@@ -160,7 +204,7 @@ static void startv4l2()
     ret_code = ioctl(fdwr1, VIDIOC_G_FMT, &vid_format1);
 
     linewidth1 = FRAME_WIDTH1;
-    framesize1 = FRAME_WIDTH1 * FRAME_HEIGHT1;
+    framesize1 = FRAME_WIDTH1 * FRAME_HEIGHT1 * 4;
 
     vid_format1.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
     vid_format1.fmt.pix.width = FRAME_WIDTH1;
@@ -173,10 +217,13 @@ static void startv4l2()
 
     // set data format
     ret_code = ioctl(fdwr1, VIDIOC_S_FMT, &vid_format1);
+    if (ret_code == -1) {
+        printf("ioctl failed and returned errno %i: %s \n", errno, strerror(errno));
+    }
     assert(ret_code != -1);
 
     print_format(&vid_format1);
-
+    
     //open video_device2
     printf("using output device: %s\n", video_device2);
 
@@ -204,6 +251,9 @@ static void startv4l2()
 
     // set data format
     ret_code = ioctl(fdwr2, VIDIOC_S_FMT, &vid_format2);
+    if (ret_code == -1) {
+        printf("ioctl failed and returned errno %i: %s \n", errno, strerror(errno));
+    }
     assert(ret_code != -1);
 
     print_format(&vid_format2);
@@ -362,12 +412,12 @@ static void vframe(char ep[], char EP_error[], int r, int actual_length,
         // Print in 2 lines for FLIR ONE G3
         st1[MAX_CHARS2 - 1] = 0;
         st2[MAX_CHARS2 - 1] = 0;
-        font_write(fb_proc, 1, FRAME_OHEIGHT2 + 2, st1, FONT_COLOR_DFLT);
-        font_write(fb_proc, 1, FRAME_OHEIGHT2 + 12, st2, FONT_COLOR_DFLT);
+        //font_write(fb_proc, 1, FRAME_OHEIGHT2 + 2, st1, FONT_COLOR_DFLT);
+        //font_write(fb_proc, 1, FRAME_OHEIGHT2 + 12, st2, FONT_COLOR_DFLT);
     }
 
     // show crosshairs, remove if required
-    font_write(fb_proc, hw - 2, hh - 3, "+", FONT_COLOR_DFLT);
+    //font_write(fb_proc, hw - 2, hh - 3, "+", FONT_COLOR_DFLT);
 
     maxx -= 4;
     maxy -= 4;
@@ -381,8 +431,8 @@ static void vframe(char ep[], char EP_error[], int r, int actual_length,
     if (maxy > FRAME_OHEIGHT2 - 10)
         maxy = FRAME_OHEIGHT2 - 10;
 
-    font_write(fb_proc, FRAME_OWIDTH2 - 6, maxy, "<", FONT_COLOR_DFLT);
-    font_write(fb_proc, maxx, FRAME_OHEIGHT2 - 8, "|", FONT_COLOR_DFLT);
+    //font_write(fb_proc, FRAME_OWIDTH2 - 6, maxy, "<", FONT_COLOR_DFLT);
+    //font_write(fb_proc, maxx, FRAME_OHEIGHT2 - 8, "|", FONT_COLOR_DFLT);
 
     // build RGB image
     for (y = 0; y < FRAME_HEIGHT2; y++) {
@@ -640,8 +690,8 @@ int main(int argc, char **argv)
     if (palpath == NULL)
         usage();
 
-    sprintf(video_device1, "/dev/video%ld", n);
-    sprintf(video_device2, "/dev/video%ld", n + 1);
+    //sprintf(video_device1, "/dev/video%ld", n);
+    //sprintf(video_device2, "/dev/video%ld", n + 1);
 
     fp = fopen(palpath, "rb");
     // read 256 rgb values
