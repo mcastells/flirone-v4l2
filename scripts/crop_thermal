@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ffmpeg -i /dev/video3 -filter:v "crop=80:60:0:0" -f v4l2 /dev/video4
+ffmpeg -i /dev/video5 -filter:v "crop=80:60:0:0" -f v4l2 /dev/video6

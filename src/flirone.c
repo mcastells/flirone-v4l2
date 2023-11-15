@@ -39,19 +39,23 @@
 
 /* defines */
 
-// color visible image
-#define VIDEO_DEVICE1 "/dev/video2" // color visible image
-#define FRAME_WIDTH1    640
-#define FRAME_HEIGHT1   480
 
-// colorized thermal image
-#define VIDEO_DEVICE2 "/dev/video3" // colorized thermal image
-#define FRAME_WIDTH2    frame_width2
-#define FRAME_HEIGHT2   frame_height2
 // original width/height
-#define VIDEO_DEVICE0 "/dev/video1"  // gray scale thermal image
+#define VIDEO_DEVICE0 "/dev/video3"  // gray scale thermal image
 #define FRAME_OWIDTH2   frame_owidth2
 #define FRAME_OHEIGHT2  frame_oheight2
+
+// color visible image
+#define VIDEO_DEVICE1 "/dev/video4" // color visible image
+//#define FRAME_WIDTH1    640
+//#define FRAME_HEIGHT1   480
+#define FRAME_WIDTH1    1280
+#define FRAME_HEIGHT1   720
+
+// colorized thermal image
+#define VIDEO_DEVICE2 "/dev/video5" // colorized thermal image
+#define FRAME_WIDTH2    frame_width2
+#define FRAME_HEIGHT2   frame_height2
 
 // max chars in line
 #define MAX_CHARS2      (FRAME_WIDTH2 / 6 + (flirone_pro ? 0 : 1))
@@ -519,20 +523,20 @@ static int usb_init(void)
     // it does not cause any requests to be sent over the bus.
     r = libusb_claim_interface(devh, 0);
     if (r < 0) {
-        fprintf(stderr, "libusb_claim_interface 0 error %d\n", r);
+        fprintf(stderr, "libusb_claim_interface 3 error %d\n", r);
         goto out;
     }
     r = libusb_claim_interface(devh, 1);
     if (r < 0) {
-        fprintf(stderr, "libusb_claim_interface 1 error %d\n", r);
+        fprintf(stderr, "libusb_claim_interface 4 error %d\n", r);
         goto out;
     }
     r = libusb_claim_interface(devh, 2);
     if (r < 0) {
-        fprintf(stderr, "libusb_claim_interface 2 error %d\n", r);
+        fprintf(stderr, "libusb_claim_interface 5 error %d\n", r);
         goto out;
     }
-    printf("Successfully claimed interface 0, 1, 2\n");
+    printf("Successfully claimed interface 3, 4, 5\n");
     return 0;
 
 out:

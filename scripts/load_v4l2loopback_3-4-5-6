@@ -1,0 +1,1 @@
+sudo modprobe v4l2loopback devices=4 video_nr=3,4,5,6 exclusive_caps=0,0,0,0 card_label="obs_studio,flir_color_visible,flir_color_thermal,cropped_flir_thermal"
