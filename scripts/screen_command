@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#screenname=$(echo "$1" | sed 's/[[:space:]]//g')
+screenname=$1
+screenname=${screenname//'/'/'-'}
+
+if [ -z "$STY" ]; then
+  screen -dm -S "$screenname" /bin/bash "$0" "$1"
+  screen -ls
+else
+  eval "$1"
+fi
